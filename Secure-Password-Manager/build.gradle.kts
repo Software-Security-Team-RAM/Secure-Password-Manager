@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm") version "1.6.10"
     id("org.jetbrains.compose") version "1.1.0"
+    id("org.sonarqube") version "3.5.0.2730"
 }
 
 group = "Software-Security-Team-RAM"
