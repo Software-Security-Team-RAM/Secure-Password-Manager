@@ -1,0 +1,65 @@
+# ---------------------------------------------------------------- #
+#                   IntelliJ IDEA / Android Studio                 #
+# ---------------------------------------------------------------- #
+.idea/
+*.iws
+*.iml
+*.ipr
+local.properties
+.DS_Store
+
+# ---------------------------------------------------------------- #
+#                          Build Artifacts                         #
+# ---------------------------------------------------------------- #
+# Compiled output directories (crucial to ignore)
+build/
+bin/
+out/
+target/
+
+# Generated files
+*.log
+*.jar
+*.war
+*.zip
+*.tar
+*.gz
+*.apk
+*.aab
+*.aar
+
+# ---------------------------------------------------------------- #
+#                             Gradle                               #
+# ---------------------------------------------------------------- #
+.gradle/
+!gradle/wrapper/
+gradle-wrapper.jar
+/gradle-app-template/
+.cache/
+.temp/
+# Gradle user configuration/history
+.gradle-user-home/
+
+# ---------------------------------------------------------------- #
+#                             Kotlin                               #
+# ---------------------------------------------------------------- #
+# Kotlin compiler metadata
+*.kapt
+*.kapt.bak
+.kotlin/
+.kotlin_build/
+
+# ---------------------------------------------------------------- #
+#                     Compose for Desktop Specific                 #
+# ---------------------------------------------------------------- #
+# Temporary files generated during compose desktop build
+.jvm/
+
+# ---------------------------------------------------------------- #
+#                       macOS / Windows Specific                   #
+# ---------------------------------------------------------------- #
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
