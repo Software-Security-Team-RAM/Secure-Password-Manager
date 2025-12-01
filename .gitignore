@@ -6,7 +6,6 @@
 *.iml
 *.ipr
 local.properties
-.DS_Store
 
 # ---------------------------------------------------------------- #
 #                          Build Artifacts                         #
@@ -31,14 +30,14 @@ target/
 # ---------------------------------------------------------------- #
 #                             Gradle                               #
 # ---------------------------------------------------------------- #
-.gradle/
-!gradle/wrapper/
-gradle-wrapper.jar
-/gradle-app-template/
-.cache/
-.temp/
+#.gradle/
+#!gradle/wrapper/
+#!gradle/wrapper/gradle-wrapper.jar
+#/gradle-app-template/
+#.cache/
+#.temp/
 # Gradle user configuration/history
-.gradle-user-home/
+#.gradle-user-home/
 
 # ---------------------------------------------------------------- #
 #                             Kotlin                               #
@@ -56,10 +55,45 @@ gradle-wrapper.jar
 .jvm/
 
 # ---------------------------------------------------------------- #
+#                          SonarQube                               #
+# ---------------------------------------------------------------- #
+.sonar/
+*.sonar-report
+
+# ---------------------------------------------------------------- #
 #                       macOS / Windows Specific                   #
 # ---------------------------------------------------------------- #
 # macOS
 .DS_Store
+.AppleDouble
+.LSOverride
 
 # Windows
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ---------------------------------------------------------------- #
+#                    Environment & Secrets                        #
+# ---------------------------------------------------------------- #
+# Environment variables and secrets (CRITICAL for password manager)
+.env
+.env.local
+.env.*.local
+*.secret
+*.key
+secrets.properties
+
+# ---------------------------------------------------------------- #
+#                    Editor & Backup Files                        #
+# ---------------------------------------------------------------- #
+# Vim
+*.swp
+*.swo
+*~
+.*.sw?
+
+# Backup files
+*.bak
+*.tmp
+*.temp
