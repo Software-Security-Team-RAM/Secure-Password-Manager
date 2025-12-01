@@ -18,7 +18,6 @@ target/
 
 # Generated files
 *.log
-*.jar
 *.war
 *.zip
 *.tar
@@ -27,17 +26,20 @@ target/
 *.aab
 *.aar
 
+# JAR files (but keep gradle wrapper)
+*.jar
+# Explicitly allow gradle wrapper jar (must come immediately after *.jar)
+!**/gradle-wrapper.jar
+
 # ---------------------------------------------------------------- #
 #                             Gradle                               #
 # ---------------------------------------------------------------- #
-#.gradle/
-#!gradle/wrapper/
-#!gradle/wrapper/gradle-wrapper.jar
-#/gradle-app-template/
-#.cache/
-#.temp/
+.gradle/
+!gradle/wrapper/
+.cache/
+.temp/
 # Gradle user configuration/history
-#.gradle-user-home/
+.gradle-user-home/
 
 # ---------------------------------------------------------------- #
 #                             Kotlin                               #
