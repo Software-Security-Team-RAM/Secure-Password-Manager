@@ -18,7 +18,7 @@ import androidx.compose.runtime.Composable
 fun App() {
     MaterialTheme {
         // Initially launch the Master Password creation screen
-        CreateMasterPasswordScreen()
+        //CreateMasterPasswordScreen()
         LoginScreen()
 
         // When you implement navigation, you would switch between screens here:
