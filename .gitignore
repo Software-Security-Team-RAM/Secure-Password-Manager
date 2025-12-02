@@ -87,6 +87,19 @@ Desktop.ini
 secrets.properties
 
 # ---------------------------------------------------------------- #
+#                    SQLDelight Database Files                    #
+# ---------------------------------------------------------------- #
+# SQLite database files (runtime data - should start fresh on clone)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+# Application-specific database and security files
+safebyte.db
+safebyte.salt
+safebyte.check
+
+# ---------------------------------------------------------------- #
 #                    Editor & Backup Files                        #
 # ---------------------------------------------------------------- #
 # Vim
