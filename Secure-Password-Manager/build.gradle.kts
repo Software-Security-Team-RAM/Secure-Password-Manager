@@ -6,6 +6,8 @@ plugins {
     kotlin("jvm") version "1.6.10"
     id("org.jetbrains.compose") version "1.1.0"
     id("org.sonarqube") version "3.5.0.2730"
+    // ADDED: SQLDelight Plugin
+    id("com.squareup.sqldelight") version "1.5.5"
 }
 
 group = "Software-Security-Team-RAM"
@@ -20,10 +22,19 @@ repositories {
 dependencies {
     implementation(compose.desktop.currentOs)
     implementation("org.jetbrains.compose.material:material-icons-extended:1.1.0")
+    // ADDED: SQLite Driver
+    implementation("com.squareup.sqldelight:sqlite-driver:1.5.5")
 }
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "11"
+}
+
+// ADDED: Database Configuration
+sqldelight {
+    database("SafeByteDatabase") {
+        packageName = "Database"
+    }
 }
 
 compose.desktop {

@@ -10,6 +10,7 @@ import androidx.compose.ui.window.rememberWindowState
 import UserInterface.CreateMasterPasswordScreen
 import UserInterface.HomeScreen
 import UserInterface.LoginScreen
+import UserInterface.CryptoManager
 import androidx.compose.runtime.Composable
 
 // If your project structure is simpler, it might just be:
@@ -20,7 +21,7 @@ fun App() {
     MaterialTheme {
         // Initially launch the Master Password creation screen
         //CreateMasterPasswordScreen()
-        //LoginScreen()
+        LoginScreen()
         HomeScreen()
 
         // When you implement navigation, you would switch between screens here:

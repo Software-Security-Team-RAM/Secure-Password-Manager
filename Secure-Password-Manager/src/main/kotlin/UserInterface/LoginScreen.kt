@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+
 @Composable
 fun LoginScreen() {
     var masterPassword by remember { mutableStateOf("") }
@@ -109,10 +110,28 @@ fun LoginScreen() {
         // 5. Unlock Vault Button
         Button(
             onClick = {
-                // TODO: Implement your master password verification logic here
                 if (masterPassword.isNotEmpty()) {
-                    println("Attempting to unlock with: $masterPassword")
-                    // If password is correct, navigate to main app content
+                    // We use a 'try-catch' block. This ensures that if the Security
+                    // Kernel fails, the app catches the error instead of crashing.
+                    try {
+                        // 1. Generate the Salt (Required for encryption)
+                        // (Later, your teammate will change this to load the salt from the DB)
+                        val salt = CryptoManager.generateSalt()
+
+                        // 2. The Critical Security Handshake
+                        // This calls Zone 1 (Secure Kernel) to generate the AES Key.
+                        val key = CryptoManager.deriveKey(masterPassword.toCharArray(), salt)
+
+                        // 3. If we get here, it worked!
+                        println("Vault Unlocked Successfully.")
+                        // TODO: Add navigation to HomeScreen here later
+
+                    } catch (e: Exception) {
+                        // THIS BLOCK PREVENTS THE CRASH
+                        // If anything goes wrong above, code jumps here.
+                        println("Security Error: ${e.message}")
+                        e.printStackTrace()
+                    }
                 } else {
                     println("Please enter your master password.")
                 }
