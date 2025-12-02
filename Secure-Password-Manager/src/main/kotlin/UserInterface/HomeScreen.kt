@@ -1,9 +1,7 @@
-// HomeScreen.kt
 package UserInterface
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,400 +15,425 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import javax.crypto.SecretKey
+import androidx.compose.material.ExperimentalMaterialApi
+import kotlin.random.Random
 
-// --- Data Class (Same as before) ---
+// Data Class
 data class PasswordEntry(
     val id: String,
     val website: String,
     val username: String,
-    val passwordEncrypted: String
+    val passwordEncrypted: String,
+    val notes: String
 )
 
-// --- Home Screen Composable (Simplified - No parameters) ---
-
 @Composable
-fun HomeScreen() {
-    // 1. Mock Data State (Temporary, will be replaced by SQLite data)
-    var mockPasswordEntries by remember {
-        mutableStateOf(
-            listOf(
-                PasswordEntry("1", "Example.com", "user@example.com", "securepassword123"),
-                PasswordEntry("2", "Google", "myemail@gmail.com", "anothersecurepass"),
-                PasswordEntry("3", "GitHub", "dev_user", "mycode_pass"),
-                PasswordEntry("4", "Amazon", "shopaholic@mail.com", "buyallthethings"),
-                PasswordEntry("5", "Twitter", "x_user", "12345password"),
-            )
-        )
-    }
+fun HomeScreen(masterKey: SecretKey) {
+    val repository = remember { PasswordRepository() }
+    var passwordEntries by remember { mutableStateOf(repository.getAllPasswords(masterKey)) }
 
-    // 2. Mock Action Handlers (Same placeholder logic)
-    val onAddPassword = {
-        val newId = (mockPasswordEntries.size + 1).toString()
-        mockPasswordEntries = mockPasswordEntries + PasswordEntry(
-            id = newId,
-            website = "New Mock Site $newId",
-            username = "mockuser$newId",
-            passwordEncrypted = "mockpass$newId"
-        )
-        println("Placeholder: Navigate to Add Password Screen or show dialog.")
-    }
-    val onSearchQueryChange: (String) -> Unit = { query ->
-        println("Placeholder: Filtering list based on query: $query")
-    }
-    val onEditPassword: (PasswordEntry) -> Unit = { entry ->
-        println("Placeholder: Edit password for ${entry.website}")
-    }
-    val onDeletePassword: (PasswordEntry) -> Unit = { entry ->
-        mockPasswordEntries = mockPasswordEntries.filter { it.id != entry.id }
-        println("Placeholder: Deleted password for ${entry.website}")
-    }
-    val onLockVault = {
-        println("Placeholder: Lock Vault (Navigate to Login Screen)")
-    }
+    // State for Add/Edit Dialog
+    var showDialog by remember { mutableStateOf(false) }
+    var passwordToEdit by remember { mutableStateOf<PasswordEntry?>(null) } // Null means "Add Mode"
 
-    // --- UI Implementation ---
-    val lightBlueBackground = Color(0xFFF7F8FC)
-    val cardColor = Color.White
-    val darkColor = Color(0xFF333333)
-    val borderColor = Color(0xFFE0E0E0)
-
+    // Search Query State
     var searchQuery by remember { mutableStateOf("") }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(lightBlueBackground)
-            .padding(16.dp)
-    ) {
-        // ... (Top Bar and Search Bar sections remain the same) ...
-
-        // 1. Top Bar: Password Vault Info & Actions
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            backgroundColor = cardColor,
-            elevation = 2.dp
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(darkColor),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Password Vault",
-                            tint = Color.White,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "Password Vault",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Color.Black
-                        )
-                        Text(
-                            text = "${mockPasswordEntries.size} passwords saved",
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                    }
-                }
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Button(
-                        onClick = { println("Placeholder: Auto-lock button clicked") },
-                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent),
-                        elevation = ButtonDefaults.elevation(0.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                        modifier = Modifier
-                            .border(BorderStroke(1.dp, borderColor), RoundedCornerShape(8.dp))
-                            .height(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Schedule,
-                            contentDescription = "Auto-lock time",
-                            tint = Color.Black,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Auto-lock: 5:00", color = Color.Black, fontSize = 12.sp)
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = onLockVault,
-                        colors = ButtonDefaults.buttonColors(backgroundColor = Color.Transparent),
-                        elevation = ButtonDefaults.elevation(0.dp),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-                        modifier = Modifier
-                            .border(BorderStroke(1.dp, borderColor), RoundedCornerShape(8.dp))
-                            .height(36.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = "Lock Vault",
-                            tint = Color.Black,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Lock Vault", color = Color.Black, fontSize = 12.sp)
-                    }
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 2. Search Bar and Add Password Button
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = {
-                    searchQuery = it
-                    onSearchQueryChange(it)
-                },
-                placeholder = { Text("Search websites or usernames...", color = Color.Gray) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    backgroundColor = cardColor,
-                    textColor = Color.Black
-                ),
-                singleLine = true
-            )
-            Spacer(modifier = Modifier.width(12.dp))
-            Button(
-                onClick = onAddPassword,
-                modifier = Modifier
-                    .height(56.dp)
-                    .width(140.dp),
-                colors = ButtonDefaults.buttonColors(backgroundColor = darkColor),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Add Password", tint = Color.White)
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Add Password", color = Color.White, fontSize = 14.sp)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // 3. Password List / No Passwords Found
-        if (mockPasswordEntries.isEmpty()) {
-            NoPasswordsFoundContent(onAddFirstPassword = onAddPassword)
+    fun refreshList() {
+        val all = repository.getAllPasswords(masterKey)
+        if (searchQuery.isEmpty()) {
+            passwordEntries = all
         } else {
-            // --- UPDATED to use LazyVerticalGrid ---
-            PasswordGrid(
-                passwordEntries = mockPasswordEntries,
-                onEditPassword = onEditPassword,
-                onDeletePassword = onDeletePassword
-            )
-        }
-    }
-}
-
-// --- NEW/MODIFIED Helper Composables ---
-
-@Composable
-fun PasswordGrid(
-    passwordEntries: List<PasswordEntry>,
-    onEditPassword: (PasswordEntry) -> Unit,
-    onDeletePassword: (PasswordEntry) -> Unit
-) {
-    // Create a grid layout using LazyColumn with rows
-    // Group entries into rows of 3 items each
-    val rows = passwordEntries.chunked(3)
-    
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        items(rows) { rowEntries ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                rowEntries.forEach { entry ->
-                    PasswordCard(
-                        entry = entry,
-                        onEdit = { onEditPassword(entry) },
-                        onDelete = { onDeletePassword(entry) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-                // Add spacers to fill remaining slots in the row (for 3-column layout)
-                repeat(3 - rowEntries.size) {
-                    Spacer(modifier = Modifier.weight(1f))
-                }
+            passwordEntries = all.filter {
+                it.website.contains(searchQuery, ignoreCase = true) ||
+                        it.username.contains(searchQuery, ignoreCase = true)
             }
         }
     }
-}
 
-// --- Existing Helper Composables (Code is unchanged, but included for completeness) ---
-
-@Composable
-fun NoPasswordsFoundContent(onAddFirstPassword: () -> Unit) {
-    // ... (No change)
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(top = 64.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
-    ) {
-        Icon(
-            imageVector = Icons.Default.Lock,
-            contentDescription = "No Passwords Found",
-            tint = Color.Gray,
-            modifier = Modifier.size(64.dp)
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            text = "No passwords found",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Color.Black
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "Start by adding your first password",
-            fontSize = 16.sp,
-            color = Color.Gray,
-            textAlign = TextAlign.Center
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-        Button(
-            onClick = onAddFirstPassword,
-            modifier = Modifier
-                .fillMaxWidth(0.6f)
-                .height(56.dp),
-            colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF333333)),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(Icons.Default.Add, contentDescription = "Add Your First Password", tint = Color.White)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Add Your First Password", color = Color.White, fontSize = 16.sp)
-        }
+    // Refresh when search query changes
+    LaunchedEffect(searchQuery) {
+        refreshList()
     }
-}
 
-@Composable
-fun PasswordCard(
-    entry: PasswordEntry,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    // ... (No change)
-    var showPassword by remember { mutableStateOf(false) }
+    val onDeletePassword: (PasswordEntry) -> Unit = { entry ->
+        repository.deletePassword(entry.id)
+        refreshList()
+    }
+
+    // Edit Handler: Opens the dialog in "Edit Mode"
+    val onEditPassword: (PasswordEntry) -> Unit = { entry ->
+        passwordToEdit = entry
+        showDialog = true
+    }
+
+    val lightBlueBackground = Color(0xFFF7F8FC)
     val darkColor = Color(0xFF333333)
-    val lightGreyBackground = Color(0xFFF0F0F0)
 
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        backgroundColor = Color.White,
-        elevation = 2.dp
-    ) {
+    Box(modifier = Modifier.fillMaxSize().background(lightBlueBackground)) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = entry.website,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.Black
-            )
-            Text(
-                text = entry.username,
-                fontSize = 14.sp,
-                color = Color.Gray
-            )
-            Spacer(modifier = Modifier.height(12.dp))
 
-            // Password Display Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(lightGreyBackground, RoundedCornerShape(8.dp))
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = if (showPassword) entry.passwordEncrypted else "••••••••••",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Black,
-                    modifier = Modifier.weight(1f)
-                )
-                Row {
-                    IconButton(onClick = { showPassword = !showPassword }) {
-                        Icon(
-                            imageVector = if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                            contentDescription = "Toggle Password Visibility",
-                            tint = darkColor
-                        )
-                    }
-                    IconButton(onClick = { println("Placeholder: Copy clicked for ${entry.website}") }) {
-                        Icon(
-                            imageVector = Icons.Default.ContentCopy,
-                            contentDescription = "Copy Password",
-                            tint = darkColor
-                        )
-                    }
-                }
-            }
+            TopBarSection(count = passwordEntries.size)
+
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Action Buttons (Edit & Delete)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Button(
-                    onClick = onEdit,
-                    modifier = Modifier.weight(1f).height(48.dp),
-                    colors = ButtonDefaults.buttonColors(backgroundColor = lightGreyBackground),
-                    shape = RoundedCornerShape(8.dp),
-                    elevation = ButtonDefaults.elevation(0.dp)
-                ) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Black, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Edit", color = Color.Black, fontSize = 14.sp)
-                }
+            // Search & Add Button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("Search websites...") },
+                    leadingIcon = { Icon(Icons.Default.Search, "Search") },
+                    modifier = Modifier.weight(1f).background(Color.White, RoundedCornerShape(12.dp)),
+                    colors = TextFieldDefaults.outlinedTextFieldColors(focusedBorderColor = Color.Transparent, unfocusedBorderColor = Color.Transparent)
+                )
                 Spacer(modifier = Modifier.width(12.dp))
-                IconButton(
-                    onClick = onDelete,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFE57373))
+                Button(
+                    onClick = {
+                        passwordToEdit = null // Reset to Add Mode
+                        showDialog = true
+                    },
+                    modifier = Modifier.height(56.dp),
+                    colors = ButtonDefaults.buttonColors(backgroundColor = darkColor),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.White, modifier = Modifier.size(24.dp))
+                    Icon(Icons.Default.Add, "Add", tint = Color.White)
+                    Text(" Add", color = Color.White)
                 }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (passwordEntries.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No passwords found.", color = Color.Gray)
+                }
+            } else {
+                PasswordList(passwordEntries, onDeletePassword, onEditPassword)
+            }
+        }
+
+        // The Dialog Logic
+        if (showDialog) {
+            AddPasswordDialog(
+                initialEntry = passwordToEdit, // Pass the existing data if editing
+                onDismiss = { showDialog = false },
+                onSave = { website, username, password, notes ->
+                    if (passwordToEdit != null) {
+                        // EDIT MODE: Update existing entry
+                        repository.updatePassword(passwordToEdit!!.id, website, username, password, notes, masterKey)
+                    } else {
+                        // ADD MODE: Create new entry
+                        repository.addPassword(website, username, password, notes, masterKey)
+                    }
+                    refreshList()
+                    showDialog = false
+                }
+            )
+        }
+    }
+}
+
+// --- Helper Components ---
+
+@Composable
+fun TopBarSection(count: Int) {
+    Card(shape = RoundedCornerShape(12.dp), elevation = 2.dp) {
+        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF333333)), contentAlignment = Alignment.Center) {
+                Icon(Icons.Default.Lock, "Vault", tint = Color.White)
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text("Password Vault", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text("$count passwords saved", color = Color.Gray, fontSize = 14.sp)
             }
         }
     }
+}
+
+@Composable
+fun PasswordList(entries: List<PasswordEntry>, onDelete: (PasswordEntry) -> Unit, onEdit: (PasswordEntry) -> Unit) {
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        items(entries) { entry ->
+            PasswordCard(entry, onDelete, onEdit)
+        }
+    }
+}
+
+@Composable
+fun PasswordCard(entry: PasswordEntry, onDelete: (PasswordEntry) -> Unit, onEdit: (PasswordEntry) -> Unit) {
+    var showPassword by remember { mutableStateOf(false) }
+    val clipboardManager = LocalClipboardManager.current
+
+    Card(shape = RoundedCornerShape(12.dp), elevation = 2.dp) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Column {
+                    Text(entry.website, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(entry.username, color = Color.Gray, fontSize = 14.sp)
+                }
+                Row {
+                    // Edit Button
+                    IconButton(onClick = { onEdit(entry) }) {
+                        Icon(Icons.Default.Edit, "Edit", tint = Color.Black)
+                    }
+                    // Delete Button
+                    IconButton(onClick = { onDelete(entry) }) {
+                        Icon(Icons.Default.Delete, "Delete", tint = Color(0xFFE57373))
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Password Row
+            Row(
+                modifier = Modifier.fillMaxWidth().background(Color(0xFFF0F0F0), RoundedCornerShape(8.dp)).padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(if (showPassword) entry.passwordEncrypted else "••••••••••")
+
+                Row {
+                    // Reveal Button
+                    IconButton(onClick = { showPassword = !showPassword }) {
+                        Icon(if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility, "Toggle")
+                    }
+                    // Copy Button
+                    IconButton(onClick = {
+                        clipboardManager.setText(AnnotatedString(entry.passwordEncrypted))
+                    }) {
+                        Icon(Icons.Default.ContentCopy, "Copy", tint = Color(0xFF333333))
+                    }
+                }
+            }
+
+            // Notes Display (If present)
+            if (entry.notes.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Notes: ${entry.notes}", color = Color.Gray, fontSize = 12.sp)
+            }
+        }
+    }
+}
+
+// --- ADD/EDIT DIALOG WITH GENERATOR ---
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+fun AddPasswordDialog(
+    initialEntry: PasswordEntry? = null,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String, String) -> Unit // Added String param for Notes
+) {
+    var selectedTab by remember { mutableStateOf(0) } // 0 = Details, 1 = Generator
+    val tabs = listOf("Details", "Generator")
+
+    // Form State (Pre-filled if editing)
+    var website by remember { mutableStateOf(initialEntry?.website ?: "") }
+    var username by remember { mutableStateOf(initialEntry?.username ?: "") }
+    var password by remember { mutableStateOf(initialEntry?.passwordEncrypted ?: "") }
+    var notes by remember { mutableStateOf(initialEntry?.notes ?: "") } // NEW: Notes State
+
+    // Generator State
+    var genLength by remember { mutableStateOf(16f) }
+    var useUpper by remember { mutableStateOf(true) }
+    var useLower by remember { mutableStateOf(true) }
+    var useNums by remember { mutableStateOf(true) }
+    var useSyms by remember { mutableStateOf(true) }
+    var generatedPass by remember { mutableStateOf("") }
+
+    val clipboardManager = LocalClipboardManager.current
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(if (initialEntry == null) "Add New Password" else "Edit Password") },
+        text = {
+            Column(modifier = Modifier.width(400.dp)) {
+                // Tab Row
+                TabRow(
+                    selectedTabIndex = selectedTab,
+                    backgroundColor = Color.White,
+                    contentColor = Color(0xFF333333)
+                ) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTab == index,
+                            onClick = { selectedTab = index },
+                            text = { Text(title) }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                if (selectedTab == 0) {
+                    // --- DETAILS TAB ---
+                    Column {
+                        OutlinedTextField(
+                            value = website,
+                            onValueChange = { website = it },
+                            label = { Text("Website/Service") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = username,
+                            onValueChange = { username = it },
+                            label = { Text("Username/Email") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = { Text("Password") },
+                            modifier = Modifier.fillMaxWidth(),
+                            visualTransformation = PasswordVisualTransformation(),
+                            trailingIcon = {
+                                if (password.isNotEmpty()) {
+                                    IconButton(onClick = { password = "" }) {
+                                        Icon(Icons.Default.Clear, "Clear")
+                                    }
+                                }
+                            }
+                        )
+                        // NEW: Notes Field
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = notes,
+                            onValueChange = { notes = it },
+                            label = { Text("Notes (Optional)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLines = 3
+                        )
+                    }
+                } else {
+                    // --- GENERATOR TAB ---
+                    Column {
+                        // Generated Display Area
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFFF5F5F5), RoundedCornerShape(8.dp))
+                                .padding(12.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (generatedPass.isEmpty()) "Click Generate" else generatedPass,
+                                fontSize = 16.sp,
+                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                maxLines = 1
+                            )
+                            IconButton(onClick = {
+                                if(generatedPass.isNotEmpty()) clipboardManager.setText(AnnotatedString(generatedPass))
+                            }) {
+                                Icon(Icons.Default.ContentCopy, "Copy")
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Controls
+                        Text("Length: ${genLength.toInt()}")
+                        Slider(
+                            value = genLength,
+                            onValueChange = { genLength = it },
+                            valueRange = 8f..32f,
+                            steps = 24
+                        )
+
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Column {
+                                LabelledCheckbox("Uppercase (A-Z)", useUpper) { useUpper = it }
+                                LabelledCheckbox("Numbers (0-9)", useNums) { useNums = it }
+                            }
+                            Column {
+                                LabelledCheckbox("Lowercase (a-z)", useLower) { useLower = it }
+                                LabelledCheckbox("Symbols (!@#$)", useSyms) { useSyms = it }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Generator Buttons
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Button(
+                                onClick = {
+                                    generatedPass = generateRandomPassword(genLength.toInt(), useUpper, useLower, useNums, useSyms)
+                                },
+                                colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF333333))
+                            ) {
+                                Icon(Icons.Default.Refresh, "Generate", tint = Color.White)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Generate", color = Color.White)
+                            }
+
+                            // "Use Password" Button - Moves result to Details tab
+                            Button(
+                                onClick = {
+                                    if (generatedPass.isNotEmpty()) {
+                                        password = generatedPass
+                                        selectedTab = 0 // Switch back to details
+                                    }
+                                },
+                                enabled = generatedPass.isNotEmpty(),
+                                colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFFF0F0F0))
+                            ) {
+                                Text("Use Password")
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (selectedTab == 0) {
+                Button(onClick = { onSave(website, username, password, notes) }) { Text("Save") }
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) { Text("Cancel") }
+        }
+    )
+}
+
+@Composable
+fun LabelledCheckbox(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { onCheckedChange(!checked) }) {
+        Checkbox(checked = checked, onCheckedChange = onCheckedChange)
+        Text(label, fontSize = 14.sp)
+    }
+}
+
+// Logic Function for Random Generation
+fun generateRandomPassword(length: Int, upper: Boolean, lower: Boolean, nums: Boolean, syms: Boolean): String {
+    val upperChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    val lowerChars = "abcdefghijklmnopqrstuvwxyz"
+    val numChars = "0123456789"
+    val symChars = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+
+    var pool = ""
+    if (upper) pool += upperChars
+    if (lower) pool += lowerChars
+    if (nums) pool += numChars
+    if (syms) pool += symChars
+
+    if (pool.isEmpty()) return ""
+
+    return (1..length)
+        .map { pool[Random.nextInt(pool.length)] }
+        .joinToString("")
 }

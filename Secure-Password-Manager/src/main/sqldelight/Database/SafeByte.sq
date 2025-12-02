@@ -1,0 +1,22 @@
+CREATE TABLE PasswordEntity (
+    id TEXT NOT NULL PRIMARY KEY,
+    website TEXT NOT NULL,
+    username TEXT NOT NULL,
+    ciphertext BLOB NOT NULL,
+    iv BLOB NOT NULL,
+    salt BLOB NOT NULL,
+    notes TEXT -- The 7th column
+);
+
+selectAll:
+SELECT * FROM PasswordEntity;
+
+insertOrReplace:
+INSERT OR REPLACE INTO PasswordEntity(id, website, username, ciphertext, iv, salt, notes)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+deleteById:
+DELETE FROM PasswordEntity WHERE id = ?;
+
+selectSalt:
+SELECT salt FROM PasswordEntity LIMIT 1;
