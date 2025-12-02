@@ -1,5 +1,6 @@
 // Main.kt
 
+import UserInterface.AddPasswordScreen
 import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -21,8 +22,9 @@ fun App() {
     MaterialTheme {
         // Initially launch the Master Password creation screen
         //CreateMasterPasswordScreen()
-        LoginScreen()
-        HomeScreen()
+        //LoginScreen()
+        //HomeScreen()
+        AddPasswordScreen()
 
         // When you implement navigation, you would switch between screens here:
         // when (currentScreen) {
