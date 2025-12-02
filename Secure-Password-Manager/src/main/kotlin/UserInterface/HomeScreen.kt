@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import javax.crypto.SecretKey
@@ -38,13 +37,15 @@ data class PasswordEntry(
 fun HomeScreen(masterKey: SecretKey) {
     val repository = remember { PasswordRepository() }
     var passwordEntries by remember { mutableStateOf(repository.getAllPasswords(masterKey)) }
-    var showAddDialog by remember { mutableStateOf(false) }
+
+    // State for Add/Edit Dialog
+    var showDialog by remember { mutableStateOf(false) }
+    var passwordToEdit by remember { mutableStateOf<PasswordEntry?>(null) } // Null means "Add Mode"
 
     // Search Query State
     var searchQuery by remember { mutableStateOf("") }
 
     fun refreshList() {
-        // Basic Search Filter Implementation (Requirement: Search)
         val all = repository.getAllPasswords(masterKey)
         if (searchQuery.isEmpty()) {
             passwordEntries = all
@@ -64,6 +65,12 @@ fun HomeScreen(masterKey: SecretKey) {
     val onDeletePassword: (PasswordEntry) -> Unit = { entry ->
         repository.deletePassword(entry.id)
         refreshList()
+    }
+
+    // Edit Handler: Opens the dialog in "Edit Mode"
+    val onEditPassword: (PasswordEntry) -> Unit = { entry ->
+        passwordToEdit = entry
+        showDialog = true
     }
 
     val lightBlueBackground = Color(0xFFF7F8FC)
@@ -92,7 +99,10 @@ fun HomeScreen(masterKey: SecretKey) {
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Button(
-                    onClick = { showAddDialog = true },
+                    onClick = {
+                        passwordToEdit = null // Reset to Add Mode
+                        showDialog = true
+                    },
                     modifier = Modifier.height(56.dp),
                     colors = ButtonDefaults.buttonColors(backgroundColor = darkColor),
                     shape = RoundedCornerShape(12.dp)
@@ -109,17 +119,26 @@ fun HomeScreen(masterKey: SecretKey) {
                     Text("No passwords found.", color = Color.Gray)
                 }
             } else {
-                PasswordList(passwordEntries, onDeletePassword)
+                PasswordList(passwordEntries, onDeletePassword, onEditPassword)
             }
         }
 
-        if (showAddDialog) {
+        // The Dialog Logic
+        if (showDialog) {
             AddPasswordDialog(
-                onDismiss = { showAddDialog = false },
+                initialEntry = passwordToEdit, // Pass the existing data if editing
+                onDismiss = { showDialog = false },
                 onSave = { website, username, password ->
-                    repository.addPassword(website, username, password, masterKey)
+                    if (passwordToEdit != null) {
+                        // EDIT MODE: Update existing entry
+                        // Make sure you added 'updatePassword' to PasswordRepository.kt!
+                        repository.updatePassword(passwordToEdit!!.id, website, username, password, masterKey)
+                    } else {
+                        // ADD MODE: Create new entry
+                        repository.addPassword(website, username, password, masterKey)
+                    }
                     refreshList()
-                    showAddDialog = false
+                    showDialog = false
                 }
             )
         }
@@ -145,16 +164,16 @@ fun TopBarSection(count: Int) {
 }
 
 @Composable
-fun PasswordList(entries: List<PasswordEntry>, onDelete: (PasswordEntry) -> Unit) {
+fun PasswordList(entries: List<PasswordEntry>, onDelete: (PasswordEntry) -> Unit, onEdit: (PasswordEntry) -> Unit) {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(16.dp)) {
         items(entries) { entry ->
-            PasswordCard(entry, onDelete)
+            PasswordCard(entry, onDelete, onEdit)
         }
     }
 }
 
 @Composable
-fun PasswordCard(entry: PasswordEntry, onDelete: (PasswordEntry) -> Unit) {
+fun PasswordCard(entry: PasswordEntry, onDelete: (PasswordEntry) -> Unit, onEdit: (PasswordEntry) -> Unit) {
     var showPassword by remember { mutableStateOf(false) }
     val clipboardManager = LocalClipboardManager.current
 
@@ -165,8 +184,15 @@ fun PasswordCard(entry: PasswordEntry, onDelete: (PasswordEntry) -> Unit) {
                     Text(entry.website, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     Text(entry.username, color = Color.Gray, fontSize = 14.sp)
                 }
-                IconButton(onClick = { onDelete(entry) }) {
-                    Icon(Icons.Default.Delete, "Delete", tint = Color(0xFFE57373))
+                Row {
+                    // Edit Button
+                    IconButton(onClick = { onEdit(entry) }) {
+                        Icon(Icons.Default.Edit, "Edit", tint = Color.Black)
+                    }
+                    // Delete Button
+                    IconButton(onClick = { onDelete(entry) }) {
+                        Icon(Icons.Default.Delete, "Delete", tint = Color(0xFFE57373))
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
@@ -182,7 +208,7 @@ fun PasswordCard(entry: PasswordEntry, onDelete: (PasswordEntry) -> Unit) {
                     IconButton(onClick = { showPassword = !showPassword }) {
                         Icon(if (showPassword) Icons.Default.VisibilityOff else Icons.Default.Visibility, "Toggle")
                     }
-                    // Copy Button (Requirement: Clipboard)
+                    // Copy Button
                     IconButton(onClick = {
                         clipboardManager.setText(AnnotatedString(entry.passwordEncrypted))
                     }) {
@@ -194,18 +220,22 @@ fun PasswordCard(entry: PasswordEntry, onDelete: (PasswordEntry) -> Unit) {
     }
 }
 
-// --- UPDATED DIALOG WITH GENERATOR TAB ---
+// --- ADD/EDIT DIALOG WITH GENERATOR ---
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun AddPasswordDialog(onDismiss: () -> Unit, onSave: (String, String, String) -> Unit) {
+fun AddPasswordDialog(
+    initialEntry: PasswordEntry? = null,
+    onDismiss: () -> Unit,
+    onSave: (String, String, String) -> Unit
+) {
     var selectedTab by remember { mutableStateOf(0) } // 0 = Details, 1 = Generator
     val tabs = listOf("Details", "Generator")
 
-    // Form State
-    var website by remember { mutableStateOf("") }
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    // Form State (Pre-filled if editing)
+    var website by remember { mutableStateOf(initialEntry?.website ?: "") }
+    var username by remember { mutableStateOf(initialEntry?.username ?: "") }
+    var password by remember { mutableStateOf(initialEntry?.passwordEncrypted ?: "") }
 
     // Generator State
     var genLength by remember { mutableStateOf(16f) }
@@ -219,7 +249,7 @@ fun AddPasswordDialog(onDismiss: () -> Unit, onSave: (String, String, String) ->
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add New Password") },
+        title = { Text(if (initialEntry == null) "Add New Password" else "Edit Password") },
         text = {
             Column(modifier = Modifier.width(400.dp)) {
                 // Tab Row

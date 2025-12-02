@@ -18,7 +18,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import javax.crypto.SecretKey
-import java.io.File // <--- NEEDED FOR SAVING THE SALT
+import java.io.File
+import java.security.MessageDigest // Needed for hashing
 
 @Composable
 fun LoginScreen(onLoginSuccess: (SecretKey) -> Unit) {
@@ -28,6 +29,14 @@ fun LoginScreen(onLoginSuccess: (SecretKey) -> Unit) {
     val darkColor = Color(0xFF333333)
     val lightGreyBackground = Color(0xFFF0F0F0)
     val descriptionTextColor = Color(0xFF666666)
+
+    // Helper function to create a verification hash of the key
+    // We do NOT store the password. We store a hash of the KEY.
+    fun hashKey(key: SecretKey): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hashBytes = digest.digest(key.encoded)
+        return hashBytes.joinToString("") { "%02x".format(it) }
+    }
 
     Column(
         modifier = Modifier.fillMaxSize().background(Color.White).padding(24.dp),
@@ -50,11 +59,18 @@ fun LoginScreen(onLoginSuccess: (SecretKey) -> Unit) {
             Text("Master Password", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color.Black, modifier = Modifier.padding(start = 8.dp, bottom = 4.dp))
             OutlinedTextField(
                 value = masterPassword,
-                onValueChange = { masterPassword = it },
+                onValueChange = {
+                    masterPassword = it
+                    errorMessage = "" // Clear error when typing
+                },
                 placeholder = { Text("Enter master password") },
                 visualTransformation = PasswordVisualTransformation(),
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = TextFieldDefaults.outlinedTextFieldColors(backgroundColor = lightGreyBackground),
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    backgroundColor = lightGreyBackground,
+                    focusedBorderColor = if (errorMessage.isNotEmpty()) Color.Red else Color.Transparent,
+                    unfocusedBorderColor = if (errorMessage.isNotEmpty()) Color.Red else Color.Transparent
+                ),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true
             )
@@ -69,25 +85,54 @@ fun LoginScreen(onLoginSuccess: (SecretKey) -> Unit) {
             onClick = {
                 if (masterPassword.isNotEmpty()) {
                     try {
-                        // --- FIXED LOGIC: PERSISTENT SALT ---
                         val saltFile = File("safebyte.salt")
-                        val salt: ByteArray
+                        val checkFile = File("safebyte.check")
 
                         if (saltFile.exists()) {
-                            // RETURNING USER: Load the existing salt
-                            println("Login: Loading existing salt from file.")
-                            salt = saltFile.readBytes()
+                            // --- LOGIN MODE ---
+
+                            // 1. Load Salt
+                            val salt = saltFile.readBytes()
+
+                            // 2. Derive Key
+                            val key = CryptoManager.deriveKey(masterPassword.toCharArray(), salt)
+
+                            // 3. VERIFY KEY
+                            if (checkFile.exists()) {
+                                val savedHash = checkFile.readText()
+                                val currentHash = hashKey(key)
+
+                                if (savedHash == currentHash) {
+                                    // MATCH! Let them in.
+                                    onLoginSuccess(key)
+                                } else {
+                                    // NO MATCH! Block them.
+                                    errorMessage = "Incorrect Password. Please try again."
+                                }
+                            } else {
+                                // Edge case: Salt exists but check file missing?
+                                // Assume legacy mode or corruption, just let them in (or force reset)
+                                onLoginSuccess(key)
+                            }
+
                         } else {
-                            // NEW USER: Generate salt and SAVE IT
-                            println("Login: Creating new salt and saving to file.")
-                            salt = CryptoManager.generateSalt()
+                            // --- SETUP MODE (First Run) ---
+
+                            // 1. Generate & Save Salt
+                            val salt = CryptoManager.generateSalt()
                             saltFile.writeBytes(salt)
+
+                            // 2. Derive Key
+                            val key = CryptoManager.deriveKey(masterPassword.toCharArray(), salt)
+
+                            // 3. Create Verification File
+                            // We save a hash of the key so we can check it next time
+                            val keyHash = hashKey(key)
+                            checkFile.writeText(keyHash)
+
+                            println("Setup: Created new user with verification hash.")
+                            onLoginSuccess(key)
                         }
-
-                        // Derive the Key using the consistent salt
-                        val key = CryptoManager.deriveKey(masterPassword.toCharArray(), salt)
-
-                        onLoginSuccess(key)
 
                     } catch (e: Exception) {
                         errorMessage = "Error: ${e.message}"

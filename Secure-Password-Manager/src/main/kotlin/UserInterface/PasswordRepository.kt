@@ -9,22 +9,27 @@ class PasswordRepository {
     private val database = SafeByteDatabase(driver)
     private val dbQueries = database.safeByteQueries
 
-    // Function to add a NEW password (Encrypts it first!)
+    // Function to add a NEW password
     fun addPassword(website: String, username: String, plainPass: String, masterKey: SecretKey) {
         val id = java.util.UUID.randomUUID().toString()
+        saveToDb(id, website, username, plainPass, masterKey)
+        println("Repository: Added password for $website")
+    }
 
-        // 1. Call Secure Kernel to Encrypt
+    // Function to UPDATE an existing password (The missing link!)
+    fun updatePassword(id: String, website: String, username: String, plainPass: String, masterKey: SecretKey) {
+        saveToDb(id, website, username, plainPass, masterKey)
+        println("Repository: Updated password for $website")
+    }
+
+    // Helper function to handle the encryption and saving logic
+    private fun saveToDb(id: String, website: String, username: String, plainPass: String, masterKey: SecretKey) {
+        // 1. Encrypt
         val (iv, cipherText) = CryptoManager.encrypt(plainPass.toByteArray(), masterKey)
+        // Dummy salt for database schema compliance (real salt is managed by LoginScreen/File)
+        val dummySalt = ByteArray(16)
 
-        // 2. We need to store the salt used for the master key so we can login later.
-        // For this simple version, we re-use the salt from the encryption key generation,
-        // or we generate a specific salt per entry.
-        // To keep it simple per your architecture: We store the IV and Ciphertext.
-        // NOTE: Ideally, the Master Key Salt is stored in a separate config, but we will store
-        // a dummy salt here or the actual salt if passed in, to satisfy the schema.
-        val dummySalt = ByteArray(16) // In a real app, pass the actual salt used for KDF
-
-        // 3. Save to Database
+        // 2. Insert or Replace (SQLDelight handles the update automatically if ID exists)
         dbQueries.insertOrReplace(
             id,
             website,
@@ -33,7 +38,6 @@ class PasswordRepository {
             iv,
             dummySalt
         )
-        println("Repository: Saved encrypted password for $website")
     }
 
     // Function to get ALL passwords (Decrypts them!)
@@ -51,10 +55,10 @@ class PasswordRepository {
                     id = entity.id,
                     website = entity.website,
                     username = entity.username,
-                    passwordEncrypted = plainPassword // We show it decrypted in the UI
+                    passwordEncrypted = plainPassword // Shown decrypted in the list
                 )
             } catch (e: Exception) {
-                // If decryption fails (wrong master password), return error text
+                // Return "Decryption Failed" if the wrong key was used
                 PasswordEntry(entity.id, entity.website, entity.username, "Decryption Failed")
             }
         }
