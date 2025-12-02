@@ -4,16 +4,16 @@ CREATE TABLE PasswordEntity (
     username TEXT NOT NULL,
     ciphertext BLOB NOT NULL,
     iv BLOB NOT NULL,
-    salt BLOB NOT NULL
+    salt BLOB NOT NULL,
+    notes TEXT -- The 7th column
 );
 
--- Queries to access the data
 selectAll:
 SELECT * FROM PasswordEntity;
 
 insertOrReplace:
-INSERT OR REPLACE INTO PasswordEntity(id, website, username, ciphertext, iv, salt)
-VALUES (?, ?, ?, ?, ?, ?);
+INSERT OR REPLACE INTO PasswordEntity(id, website, username, ciphertext, iv, salt, notes)
+VALUES (?, ?, ?, ?, ?, ?, ?);
 
 deleteById:
 DELETE FROM PasswordEntity WHERE id = ?;

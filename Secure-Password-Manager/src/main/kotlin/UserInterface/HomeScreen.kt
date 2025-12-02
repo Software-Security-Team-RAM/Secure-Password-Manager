@@ -30,7 +30,8 @@ data class PasswordEntry(
     val id: String,
     val website: String,
     val username: String,
-    val passwordEncrypted: String
+    val passwordEncrypted: String,
+    val notes: String
 )
 
 @Composable
@@ -128,14 +129,13 @@ fun HomeScreen(masterKey: SecretKey) {
             AddPasswordDialog(
                 initialEntry = passwordToEdit, // Pass the existing data if editing
                 onDismiss = { showDialog = false },
-                onSave = { website, username, password ->
+                onSave = { website, username, password, notes ->
                     if (passwordToEdit != null) {
                         // EDIT MODE: Update existing entry
-                        // Make sure you added 'updatePassword' to PasswordRepository.kt!
-                        repository.updatePassword(passwordToEdit!!.id, website, username, password, masterKey)
+                        repository.updatePassword(passwordToEdit!!.id, website, username, password, notes, masterKey)
                     } else {
                         // ADD MODE: Create new entry
-                        repository.addPassword(website, username, password, masterKey)
+                        repository.addPassword(website, username, password, notes, masterKey)
                     }
                     refreshList()
                     showDialog = false
@@ -196,6 +196,8 @@ fun PasswordCard(entry: PasswordEntry, onDelete: (PasswordEntry) -> Unit, onEdit
                 }
             }
             Spacer(modifier = Modifier.height(12.dp))
+
+            // Password Row
             Row(
                 modifier = Modifier.fillMaxWidth().background(Color(0xFFF0F0F0), RoundedCornerShape(8.dp)).padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -216,6 +218,12 @@ fun PasswordCard(entry: PasswordEntry, onDelete: (PasswordEntry) -> Unit, onEdit
                     }
                 }
             }
+
+            // Notes Display (If present)
+            if (entry.notes.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Notes: ${entry.notes}", color = Color.Gray, fontSize = 12.sp)
+            }
         }
     }
 }
@@ -227,7 +235,7 @@ fun PasswordCard(entry: PasswordEntry, onDelete: (PasswordEntry) -> Unit, onEdit
 fun AddPasswordDialog(
     initialEntry: PasswordEntry? = null,
     onDismiss: () -> Unit,
-    onSave: (String, String, String) -> Unit
+    onSave: (String, String, String, String) -> Unit // Added String param for Notes
 ) {
     var selectedTab by remember { mutableStateOf(0) } // 0 = Details, 1 = Generator
     val tabs = listOf("Details", "Generator")
@@ -236,6 +244,7 @@ fun AddPasswordDialog(
     var website by remember { mutableStateOf(initialEntry?.website ?: "") }
     var username by remember { mutableStateOf(initialEntry?.username ?: "") }
     var password by remember { mutableStateOf(initialEntry?.passwordEncrypted ?: "") }
+    var notes by remember { mutableStateOf(initialEntry?.notes ?: "") } // NEW: Notes State
 
     // Generator State
     var genLength by remember { mutableStateOf(16f) }
@@ -299,6 +308,15 @@ fun AddPasswordDialog(
                                     }
                                 }
                             }
+                        )
+                        // NEW: Notes Field
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = notes,
+                            onValueChange = { notes = it },
+                            label = { Text("Notes (Optional)") },
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLines = 3
                         )
                     }
                 } else {
@@ -383,7 +401,7 @@ fun AddPasswordDialog(
         },
         confirmButton = {
             if (selectedTab == 0) {
-                Button(onClick = { onSave(website, username, password) }) { Text("Save") }
+                Button(onClick = { onSave(website, username, password, notes) }) { Text("Save") }
             }
         },
         dismissButton = {
