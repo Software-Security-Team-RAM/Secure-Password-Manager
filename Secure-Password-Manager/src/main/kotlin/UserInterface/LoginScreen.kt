@@ -1,7 +1,5 @@
 package UserInterface
 
-// LoginScreen.kt
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -19,137 +17,92 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
+import javax.crypto.SecretKey
+import java.io.File // <--- NEEDED FOR SAVING THE SALT
 
 @Composable
-fun LoginScreen() {
+fun LoginScreen(onLoginSuccess: (SecretKey) -> Unit) {
     var masterPassword by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
+
     val darkColor = Color(0xFF333333)
     val lightGreyBackground = Color(0xFFF0F0F0)
     val descriptionTextColor = Color(0xFF666666)
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.White)
-            .padding(24.dp),
+        modifier = Modifier.fillMaxSize().background(Color.White).padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(64.dp)) // More space at the top
+        Spacer(modifier = Modifier.height(64.dp))
 
-        // 1. Lock Icon
-        Box(
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(darkColor),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = Icons.Default.Lock,
-                contentDescription = "Lock Icon",
-                tint = Color.White,
-                modifier = Modifier.size(40.dp)
-            )
+        Box(modifier = Modifier.size(80.dp).clip(CircleShape).background(darkColor), contentAlignment = Alignment.Center) {
+            Icon(Icons.Default.Lock, "Lock Icon", tint = Color.White, modifier = Modifier.size(40.dp))
         }
 
         Spacer(modifier = Modifier.height(24.dp))
-
-        // 2. Title
-        Text(
-            text = "Unlock Password Vault",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color.Black
-        )
-
+        Text("Unlock Password Vault", fontSize = 28.sp, fontWeight = FontWeight.Bold, color = Color.Black)
         Spacer(modifier = Modifier.height(16.dp))
-
-        // 3. Description
-        Text(
-            text = "Enter your master password to access your saved passwords",
-            fontSize = 16.sp,
-            color = descriptionTextColor,
-            modifier = Modifier.padding(horizontal = 16.dp),
-            textAlign = TextAlign.Center
-        )
+        Text("Enter your master password to access your saved passwords", fontSize = 16.sp, color = descriptionTextColor, textAlign = TextAlign.Center)
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // 4. Master Password Input Field
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "Master Password",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.Black,
-                modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
-            )
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text("Master Password", fontSize = 16.sp, fontWeight = FontWeight.Medium, color = Color.Black, modifier = Modifier.padding(start = 8.dp, bottom = 4.dp))
             OutlinedTextField(
                 value = masterPassword,
                 onValueChange = { masterPassword = it },
                 placeholder = { Text("Enter master password") },
                 visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    backgroundColor = lightGreyBackground
-                ),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                colors = TextFieldDefaults.outlinedTextFieldColors(backgroundColor = lightGreyBackground),
                 shape = RoundedCornerShape(8.dp),
                 singleLine = true
             )
+            if (errorMessage.isNotEmpty()) {
+                Text(errorMessage, color = Color.Red, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp))
+            }
         }
 
-        Spacer(modifier = Modifier.height(48.dp)) // More space above the button
+        Spacer(modifier = Modifier.height(48.dp))
 
-        // 5. Unlock Vault Button
         Button(
             onClick = {
                 if (masterPassword.isNotEmpty()) {
-                    // We use a 'try-catch' block. This ensures that if the Security
-                    // Kernel fails, the app catches the error instead of crashing.
                     try {
-                        // 1. Generate the Salt (Required for encryption)
-                        // (Later, your teammate will change this to load the salt from the DB)
-                        val salt = CryptoManager.generateSalt()
+                        // --- FIXED LOGIC: PERSISTENT SALT ---
+                        val saltFile = File("safebyte.salt")
+                        val salt: ByteArray
 
-                        // 2. The Critical Security Handshake
-                        // This calls Zone 1 (Secure Kernel) to generate the AES Key.
+                        if (saltFile.exists()) {
+                            // RETURNING USER: Load the existing salt
+                            println("Login: Loading existing salt from file.")
+                            salt = saltFile.readBytes()
+                        } else {
+                            // NEW USER: Generate salt and SAVE IT
+                            println("Login: Creating new salt and saving to file.")
+                            salt = CryptoManager.generateSalt()
+                            saltFile.writeBytes(salt)
+                        }
+
+                        // Derive the Key using the consistent salt
                         val key = CryptoManager.deriveKey(masterPassword.toCharArray(), salt)
 
-                        // 3. If we get here, it worked!
-                        println("Vault Unlocked Successfully.")
-                        // TODO: Add navigation to HomeScreen here later
+                        onLoginSuccess(key)
 
                     } catch (e: Exception) {
-                        // THIS BLOCK PREVENTS THE CRASH
-                        // If anything goes wrong above, code jumps here.
-                        println("Security Error: ${e.message}")
+                        errorMessage = "Error: ${e.message}"
                         e.printStackTrace()
                     }
                 } else {
-                    println("Please enter your master password.")
+                    errorMessage = "Please enter your master password."
                 }
             },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp),
+            modifier = Modifier.fillMaxWidth().height(56.dp),
             colors = ButtonDefaults.buttonColors(backgroundColor = darkColor),
             shape = RoundedCornerShape(8.dp)
         ) {
-            Text(
-                text = "Unlock Vault",
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold
-            )
+            Text("Unlock Vault", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         }
-
-        Spacer(modifier = Modifier.weight(1f)) // Pushes content up for consistent layout
+        Spacer(modifier = Modifier.weight(1f))
     }
 }
