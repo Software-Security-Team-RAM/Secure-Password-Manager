@@ -45,7 +45,16 @@ fun App() {
             }
             "home" -> {
                 if (masterKey != null) {
-                    HomeScreen(masterKey!!)
+                    HomeScreen(
+                        masterKey = masterKey!!,
+                        onLockVault = {
+                            // Clear the master key from memory for security
+                            masterKey = null
+                            // Navigate back to login screen
+                            currentScreen = "login"
+                            println("Navigation: Vault locked, returning to Login Screen")
+                        }
+                    )
                 }
             }
         }
