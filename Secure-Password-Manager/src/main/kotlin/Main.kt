@@ -6,18 +6,34 @@ import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.runtime.*
 import UserInterface.HomeScreen
 import UserInterface.LoginScreen
-// CryptoManager is not needed in Main, so I removed it to keep it clean
+import UserInterface.CreateMasterPasswordScreen
+import java.io.File
 
 @Composable
 fun App() {
     MaterialTheme {
+        // Check if this is the first launch (master password hasn't been created yet)
+        val saltFile = File("safebyte.salt")
+        val isFirstLaunch = !saltFile.exists()
+        
         // State to track which screen is active
-        var currentScreen by remember { mutableStateOf("login") }
+        var currentScreen by remember { 
+            mutableStateOf(if (isFirstLaunch) "createPassword" else "login") 
+        }
 
         // We hold the Master Key here in memory while the app is open
         var masterKey by remember { mutableStateOf<javax.crypto.SecretKey?>(null) }
 
         when (currentScreen) {
+            "createPassword" -> {
+                CreateMasterPasswordScreen(
+                    onPasswordCreated = { key ->
+                        masterKey = key
+                        currentScreen = "home"
+                        println("Navigation: Master password created, switching to Home Screen")
+                    }
+                )
+            }
             "login" -> {
                 LoginScreen(
                     onLoginSuccess = { key ->
@@ -32,7 +48,7 @@ fun App() {
                     HomeScreen(masterKey!!)
                 }
             }
-        } // <--- THIS WAS MISSING
+        }
     }
 }
 
