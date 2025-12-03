@@ -35,7 +35,7 @@ data class PasswordEntry(
 )
 
 @Composable
-fun HomeScreen(masterKey: SecretKey) {
+fun HomeScreen(masterKey: SecretKey, onLockVault: () -> Unit) {
     val repository = remember { PasswordRepository() }
     var passwordEntries by remember { mutableStateOf(repository.getAllPasswords(masterKey)) }
 
@@ -80,7 +80,10 @@ fun HomeScreen(masterKey: SecretKey) {
     Box(modifier = Modifier.fillMaxSize().background(lightBlueBackground)) {
         Column(modifier = Modifier.padding(16.dp)) {
 
-            TopBarSection(count = passwordEntries.size)
+            TopBarSection(
+                count = passwordEntries.size,
+                onLockVault = onLockVault
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -148,16 +151,32 @@ fun HomeScreen(masterKey: SecretKey) {
 // --- Helper Components ---
 
 @Composable
-fun TopBarSection(count: Int) {
+fun TopBarSection(count: Int, onLockVault: () -> Unit) {
     Card(shape = RoundedCornerShape(12.dp), elevation = 2.dp) {
-        Row(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF333333)), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.Lock, "Vault", tint = Color.White)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(modifier = Modifier.size(40.dp).clip(CircleShape).background(Color(0xFF333333)), contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.Lock, "Vault", tint = Color.White)
+                }
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text("Password Vault", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text("$count passwords saved", color = Color.Gray, fontSize = 14.sp)
+                }
             }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column {
-                Text("Password Vault", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Text("$count passwords saved", color = Color.Gray, fontSize = 14.sp)
+            // Lock Vault Button
+            Button(
+                onClick = onLockVault,
+                colors = ButtonDefaults.buttonColors(backgroundColor = Color(0xFF333333)),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Icon(Icons.Default.Lock, "Lock", tint = Color.White, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text("Lock Vault", color = Color.White, fontSize = 14.sp)
             }
         }
     }
