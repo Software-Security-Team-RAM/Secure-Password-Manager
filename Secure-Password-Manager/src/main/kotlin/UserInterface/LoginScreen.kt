@@ -88,50 +88,35 @@ fun LoginScreen(onLoginSuccess: (SecretKey) -> Unit) {
                         val saltFile = File("safebyte.salt")
                         val checkFile = File("safebyte.check")
 
-                        if (saltFile.exists()) {
-                            // --- LOGIN MODE ---
+                        if (!saltFile.exists()) {
+                            // This should never happen if routing is correct, but handle gracefully
+                            errorMessage = "Master password not found. Please restart the application."
+                            return@Button
+                        }
 
-                            // 1. Load Salt
-                            val salt = saltFile.readBytes()
+                        // --- LOGIN MODE ---
 
-                            // 2. Derive Key
-                            val key = CryptoManager.deriveKey(masterPassword.toCharArray(), salt)
+                        // 1. Load Salt
+                        val salt = saltFile.readBytes()
 
-                            // 3. VERIFY KEY
-                            if (checkFile.exists()) {
-                                val savedHash = checkFile.readText()
-                                val currentHash = hashKey(key)
+                        // 2. Derive Key
+                        val key = CryptoManager.deriveKey(masterPassword.toCharArray(), salt)
 
-                                if (savedHash == currentHash) {
-                                    // MATCH! Let them in.
-                                    onLoginSuccess(key)
-                                } else {
-                                    // NO MATCH! Block them.
-                                    errorMessage = "Incorrect Password. Please try again."
-                                }
-                            } else {
-                                // Edge case: Salt exists but check file missing?
-                                // Assume legacy mode or corruption, just let them in (or force reset)
+                        // 3. VERIFY KEY
+                        if (checkFile.exists()) {
+                            val savedHash = checkFile.readText()
+                            val currentHash = hashKey(key)
+
+                            if (savedHash == currentHash) {
+                                // MATCH! Let them in.
                                 onLoginSuccess(key)
+                            } else {
+                                // NO MATCH! Block them.
+                                errorMessage = "Incorrect Password. Please try again."
                             }
-
                         } else {
-                            // --- SETUP MODE (First Run) ---
-
-                            // 1. Generate & Save Salt
-                            val salt = CryptoManager.generateSalt()
-                            saltFile.writeBytes(salt)
-
-                            // 2. Derive Key
-                            val key = CryptoManager.deriveKey(masterPassword.toCharArray(), salt)
-
-                            // 3. Create Verification File
-                            // We save a hash of the key so we can check it next time
-                            val keyHash = hashKey(key)
-                            checkFile.writeText(keyHash)
-
-                            println("Setup: Created new user with verification hash.")
-                            onLoginSuccess(key)
+                            // Edge case: Salt exists but check file missing?
+                            errorMessage = "Verification file missing. Please restart the application."
                         }
 
                     } catch (e: Exception) {

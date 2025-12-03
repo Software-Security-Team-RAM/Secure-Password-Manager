@@ -17,24 +17,33 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.application
+import javax.crypto.SecretKey
+import java.io.File
+import java.security.MessageDigest
 
 // --- Main Composable for the Master Password Screen ---
 
 @Composable
-fun CreateMasterPasswordScreen() {
+fun CreateMasterPasswordScreen(onPasswordCreated: (SecretKey) -> Unit) {
     var masterPassword by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf("") }
     val darkColor = Color(0xFF333333)
     val lightGreyBackground = Color(0xFFF0F0F0)
     val descriptionTextColor = Color(0xFF666666)
+
+    // Helper function to create a verification hash of the key
+    fun hashKey(key: SecretKey): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hashBytes = digest.digest(key.encoded)
+        return hashBytes.joinToString("") { "%02x".format(it) }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(24.dp), // Increased padding for better desktop feel
+            .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Spacer(modifier = Modifier.height(32.dp))
@@ -44,7 +53,7 @@ fun CreateMasterPasswordScreen() {
             modifier = Modifier
                 .size(80.dp)
                 .clip(CircleShape)
-                .background(darkColor), // Dark grey background for the icon
+                .background(darkColor),
             contentAlignment = Alignment.Center
         ) {
             Icon(
@@ -82,9 +91,13 @@ fun CreateMasterPasswordScreen() {
         PasswordInputField(
             label = "Master Password",
             value = masterPassword,
-            onValueChange = { masterPassword = it },
+            onValueChange = { 
+                masterPassword = it
+                errorMessage = "" // Clear error when typing
+            },
             placeholder = "Enter master password",
-            backgroundColor = lightGreyBackground
+            backgroundColor = lightGreyBackground,
+            showError = errorMessage.isNotEmpty()
         )
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -93,23 +106,74 @@ fun CreateMasterPasswordScreen() {
         PasswordInputField(
             label = "Confirm Master Password",
             value = confirmPassword,
-            onValueChange = { confirmPassword = it },
+            onValueChange = { 
+                confirmPassword = it
+                errorMessage = "" // Clear error when typing
+            },
             placeholder = "Re-enter master password",
-            backgroundColor = lightGreyBackground
+            backgroundColor = lightGreyBackground,
+            showError = errorMessage.isNotEmpty()
         )
 
-        Spacer(modifier = Modifier.weight(1f)) // Pushes the button to the bottom
+        // Error message display
+        if (errorMessage.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = errorMessage,
+                color = Color.Red,
+                fontSize = 14.sp,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
 
         // 6. Create Master Password Button
         Button(
             onClick = {
-                // TODO: Implement your master password creation and validation logic here
-                if (masterPassword == confirmPassword && masterPassword.isNotEmpty()) {
-                    println("Master Password Created: $masterPassword")
-                } else if (masterPassword != confirmPassword) {
-                    println("Passwords do not match!")
-                } else {
-                    println("Please enter a password.")
+                // Validation
+                if (masterPassword.isEmpty()) {
+                    errorMessage = "Please enter a password."
+                    return@Button
+                }
+                
+                if (masterPassword.length < 8) {
+                    errorMessage = "Password must be at least 8 characters long."
+                    return@Button
+                }
+                
+                if (masterPassword != confirmPassword) {
+                    errorMessage = "Passwords do not match!"
+                    return@Button
+                }
+
+                // Create master password
+                try {
+                    val saltFile = File("safebyte.salt")
+                    val checkFile = File("safebyte.check")
+
+                    // 1. Generate & Save Salt
+                    val salt = CryptoManager.generateSalt()
+                    saltFile.writeBytes(salt)
+
+                    // 2. Derive Key
+                    val key = CryptoManager.deriveKey(masterPassword.toCharArray(), salt)
+
+                    // 3. Create Verification File
+                    val keyHash = hashKey(key)
+                    checkFile.writeText(keyHash)
+
+                    println("Setup: Created new master password with verification hash.")
+                    
+                    // Clear password from memory
+                    masterPassword = ""
+                    confirmPassword = ""
+                    
+                    // Navigate to home screen
+                    onPasswordCreated(key)
+                } catch (e: Exception) {
+                    errorMessage = "Error creating master password: ${e.message}"
+                    e.printStackTrace()
                 }
             },
             modifier = Modifier
@@ -138,7 +202,8 @@ fun PasswordInputField(
     value: String,
     onValueChange: (String) -> Unit,
     placeholder: String,
-    backgroundColor: Color
+    backgroundColor: Color,
+    showError: Boolean = false
 ) {
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -159,40 +224,12 @@ fun PasswordInputField(
                 .fillMaxWidth()
                 .height(56.dp),
             colors = TextFieldDefaults.outlinedTextFieldColors(
-                focusedBorderColor = Color.Transparent,
-                unfocusedBorderColor = Color.Transparent,
+                focusedBorderColor = if (showError) Color.Red else Color.Transparent,
+                unfocusedBorderColor = if (showError) Color.Red else Color.Transparent,
                 backgroundColor = backgroundColor
             ),
             shape = RoundedCornerShape(8.dp),
             singleLine = true
         )
-    }
-}
-
-// --- Main entry point for Compose Desktop (if needed for testing) ---
-
-// If your project uses the App() Composable from the template, you would use this structure:
-/*
-@Composable
-fun App() {
-    MaterialTheme {
-        CreateMasterPasswordScreen()
-    }
-}
-*/
-
-// If you need a standalone runnable file for testing in a desktop environment:
-fun main() = application {
-    Window(
-        onCloseRequest = ::exitApplication,
-        title = "Secure Password Manager",
-        state = androidx.compose.ui.window.rememberWindowState(
-            width = 512.dp, // Appropriate size for a modal screen
-            height = 768.dp
-        )
-    ) {
-        MaterialTheme {
-            CreateMasterPasswordScreen()
-        }
     }
 }
