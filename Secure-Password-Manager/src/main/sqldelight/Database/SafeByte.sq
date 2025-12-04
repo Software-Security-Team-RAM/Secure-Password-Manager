@@ -1,4 +1,4 @@
--- Created largly using Gemini Script
+-- Created largely using Gemini Script
 -- Scripts used for setting up table and database scripts
 
 CREATE TABLE PasswordEntity (

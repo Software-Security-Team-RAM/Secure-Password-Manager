@@ -1,6 +1,6 @@
 /**
-* Created largly using Gemini Script
-* Implements password storage (with encryption) and retreival (with decryption)
+* Created largely using Gemini Script
+* Implements password storage (with encryption) and retrieval (with decryption)
 */
 
 

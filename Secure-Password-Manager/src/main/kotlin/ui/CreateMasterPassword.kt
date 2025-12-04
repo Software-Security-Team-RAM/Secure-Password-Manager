@@ -148,6 +148,7 @@ fun CreateMasterPasswordScreen(onPasswordCreated: (SecretKey) -> Unit) {
                     return@Button
                 }
                 
+                // ensure that the passwords match
                 if (masterPassword != confirmPassword) {
                     errorMessage = "Passwords do not match!"
                     return@Button

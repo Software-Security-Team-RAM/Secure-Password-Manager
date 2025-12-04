@@ -1,5 +1,5 @@
 /**
-* Created largly using Gemini Script
+* Created largely using Gemini Script
 * Implements Master Password Validation
 */
 

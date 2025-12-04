@@ -1,10 +1,8 @@
 /**
-* Created largly using Gemini Script
+* Created largely using Gemini Script
 * Hashes Master Password compares hash in Safebyte.check
 * Implements encryption for stored passwords
 */
-
-
 
 package encryption
 

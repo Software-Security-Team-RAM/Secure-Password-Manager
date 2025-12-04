@@ -1,9 +1,7 @@
 /**
-* Created largly using Gemini Script
+* Created largely using Gemini Script
 * Creates the local database and database access
 */
-
-
 
 package data
 

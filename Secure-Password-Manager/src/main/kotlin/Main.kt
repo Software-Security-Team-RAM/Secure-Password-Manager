@@ -1,5 +1,5 @@
 /**
-* Created largly using Gemini Script
+* Created largely using Gemini Script
 * Manages flow of the application
 */
 
@@ -37,7 +37,6 @@ fun App() {
                     onPasswordCreated = { key ->
                         masterKey = key
                         currentScreen = "home"
-                        println("Navigation: Master password created, switching to Home Screen")
                     }
                 )
             }
@@ -46,7 +45,6 @@ fun App() {
                     onLoginSuccess = { key ->
                         masterKey = key
                         currentScreen = "home"
-                        println("Navigation: Switching to Home Screen")
                     }
                 )
             }
@@ -59,7 +57,6 @@ fun App() {
                             masterKey = null
                             // Navigate back to login screen
                             currentScreen = "login"
-                            println("Navigation: Vault locked, returning to Login Screen")
                         }
                     )
                 }
