@@ -3,8 +3,8 @@ import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.6.10"
-    id("org.jetbrains.compose") version "1.1.0"
+    kotlin("jvm") version "1.9.0"  // Updated from 1.6.10
+    id("org.jetbrains.compose") version "1.5.0"  // Updated from 1.1.0
     id("org.sonarqube") version "3.5.0.2730"
     // ADDED: SQLDelight Plugin
     id("com.squareup.sqldelight") version "1.5.5"
@@ -21,7 +21,7 @@ repositories {
 
 dependencies {
     implementation(compose.desktop.currentOs)
-    implementation("org.jetbrains.compose.material:material-icons-extended:1.1.0")
+    implementation("org.jetbrains.compose.material:material-icons-extended:1.5.0")  // Updated version
     // ADDED: SQLite Driver
     implementation("com.squareup.sqldelight:sqlite-driver:1.5.5")
 }

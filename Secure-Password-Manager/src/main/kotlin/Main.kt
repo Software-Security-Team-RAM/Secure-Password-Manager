@@ -3,8 +3,6 @@
 * Manages flow of the application
 */
 
-
-
 import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
