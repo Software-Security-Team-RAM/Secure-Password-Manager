@@ -5,7 +5,7 @@ Secure Password Manager is an application that hosts a local database on the use
 Options for Running Application
  1. Run Main.kt in IntelliJ using Java 17 or 21
  2. Create Executable files for Host Machine
-     - Run following commands on Project Folder
+     - Run following commands on Project Folder (Secure-Password-Manager/Secure-Password-Manager)
         - chmod +x ./gradlew
         - ./gradlew clean
         - ./gradlew package
