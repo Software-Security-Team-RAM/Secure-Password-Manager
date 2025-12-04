@@ -1,4 +1,11 @@
-package UserInterface
+/**
+* Created largly using Gemini Script
+* Creates the local database and database access
+*/
+
+
+
+package data
 
 import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver

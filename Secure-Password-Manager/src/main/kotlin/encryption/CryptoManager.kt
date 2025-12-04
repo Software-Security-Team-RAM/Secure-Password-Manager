@@ -1,4 +1,12 @@
-package UserInterface
+/**
+* Created largly using Gemini Script
+* Hashes Master Password compares hash in Safebyte.check
+* Implements encryption for stored passwords
+*/
+
+
+
+package encryption
 
 import java.security.SecureRandom
 import java.security.spec.KeySpec

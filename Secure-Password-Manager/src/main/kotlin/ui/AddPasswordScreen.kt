@@ -1,6 +1,8 @@
-// AddPasswordScreen.kt
+/**
+* Created largly using Gemini Script
+*/
 
-package UserInterface
+package ui
 
 
 import androidx.compose.foundation.background

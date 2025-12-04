@@ -1,4 +1,8 @@
-package UserInterface
+/**
+* Created largly using Gemini Script
+*/
+
+package ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import javax.crypto.SecretKey
 import androidx.compose.material.ExperimentalMaterialApi
+import data.PasswordRepository
 import kotlin.random.Random
 
 // Data Class

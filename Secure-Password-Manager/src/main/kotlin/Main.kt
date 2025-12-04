@@ -1,12 +1,19 @@
+/**
+* Created largly using Gemini Script
+* Manages flow of the application
+*/
+
+
+
 import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import androidx.compose.runtime.*
-import UserInterface.HomeScreen
-import UserInterface.LoginScreen
-import UserInterface.CreateMasterPasswordScreen
+import ui.HomeScreen
+import ui.LoginScreen
+import ui.CreateMasterPasswordScreen
 import java.io.File
 
 @Composable

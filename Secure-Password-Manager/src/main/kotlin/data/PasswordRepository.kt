@@ -1,6 +1,15 @@
-package UserInterface
+/**
+* Created largly using Gemini Script
+* Implements password storage (with encryption) and retreival (with decryption)
+*/
+
+
+
+package data
 
 import Database.SafeByteDatabase
+import encryption.CryptoManager
+import ui.PasswordEntry
 import javax.crypto.SecretKey
 
 class PasswordRepository {

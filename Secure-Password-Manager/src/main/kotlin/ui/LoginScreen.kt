@@ -1,4 +1,9 @@
-package UserInterface
+/**
+* Created largly using Gemini Script
+* Implements Master Password Validation
+*/
+
+package ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -17,6 +22,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import encryption.CryptoManager
 import javax.crypto.SecretKey
 import java.io.File
 import java.security.MessageDigest // Needed for hashing
